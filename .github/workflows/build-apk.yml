@@ -54,7 +54,10 @@ jobs:
 
       - name: Build debug APK
         run: |
-          buildozer android debug
+          # `yes` auto-accepts the interactive Android SDK license prompts that
+          # Buildozer surfaces on a fresh runner. Without this the SDK install
+          # silently skips build-tools and the build fails with "aidl not found".
+          yes | buildozer android debug
           ls -lh bin/
 
       - name: Upload APK as workflow artifact
