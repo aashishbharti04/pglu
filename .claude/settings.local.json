@@ -1,0 +1,40 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(python -m app.cli info \"https://www.youtube.com/watch?v=dQw4w9WgXcQ\")",
+      "Bash(python -c ' *)",
+      "Bash(where ffmpeg *)",
+      "Bash(ffmpeg -version)",
+      "PowerShell(winget --version 2>&1)",
+      "PowerShell(Get-Command choco -ErrorAction SilentlyContinue)",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\('Path','Machine'\\) + ';' + [System.Environment]::GetEnvironmentVariable\\('Path','User'\\); ffmpeg -version 2>&1 | Select-Object -First 1; \\(Get-Command ffmpeg\\).Source)",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\('Path','Machine'\\) + ';' + [System.Environment]::GetEnvironmentVariable\\('Path','User'\\); python -m app.cli download \"https://www.youtube.com/watch?v=jNQXAC9IVRw\" --out=downloads 2>&1 | Select-Object -Last 15)",
+      "Bash(python -m app.cli info \"https://www.instagram.com/reel/C5qFqZmIJzg/\")",
+      "Bash(python -c \"import requests; r = requests.get\\('https://www.instagram.com/', timeout=10\\); print\\(r.status_code, len\\(r.text\\)\\)\")",
+      "Bash(pip install *)",
+      "Bash(py -3.12 -m pip install -r requirements.txt \"kivy[base]\" Pillow)",
+      "Bash(py -3.12 -c \"import kivy; from kivy.app import App; print\\('kivy', kivy.__version__, 'OK'\\)\")",
+      "PowerShell($env:Path = [System.Environment]::GetEnvironmentVariable\\('Path','Machine'\\) + ';' + [System.Environment]::GetEnvironmentVariable\\('Path','User'\\); $proc = Start-Process -FilePath py -ArgumentList '-3.12','main.py' -WorkingDirectory $PWD -RedirectStandardOutput app.out.log -RedirectStandardError app.err.log -PassThru -NoNewWindow; Start-Sleep -Seconds 5; Add-Type -AssemblyName System.Drawing; Add-Type -AssemblyName System.Windows.Forms; $bmp = New-Object System.Drawing.Bitmap\\([System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Width, [System.Windows.Forms.Screen]::PrimaryScreen.Bounds.Height\\); $g = [System.Drawing.Graphics]::FromImage\\($bmp\\); $g.CopyFromScreen\\(0,0,0,0,$bmp.Size\\); $bmp.Save\\(\"$PWD\\\\app_screenshot.png\"\\); $g.Dispose\\(\\); $bmp.Dispose\\(\\); Stop-Process -Id $proc.Id -Force; \"Saved screenshot\")",
+      "Bash(git init *)",
+      "Bash(git add *)",
+      "Bash(git -c user.email=you@example.com -c user.name=\"AIO Downloader Dev\" commit -m \"Initial commit: engine + Kivy UI + Buildozer + Actions workflow\")",
+      "Bash(git -c user.email=you@example.com -c user.name=\"AIO Downloader Dev\" commit -m \"Pin LF line endings for shell scripts\")",
+      "Bash(py -3.12 -m pip install pyinstaller)",
+      "Bash(py -3.12 -m PyInstaller --noconfirm aiodownloader.spec)",
+      "Bash(git mv *)",
+      "Bash(py -3.12 -m pip install fastapi \"uvicorn[standard]\")",
+      "Bash(py -3.14 -m pip install --user fastapi \"uvicorn[standard]\")",
+      "Bash(py -3.12 -m app.web.server --port 8765 --host 127.0.0.1)",
+      "Bash(echo \"PID: $!\")",
+      "Bash(curl -s -o /dev/null -w \"GET / -> HTTP %{http_code} - %{size_download} bytes\\\\n\" \"http://127.0.0.1:8765/\")",
+      "Bash(curl -s \"http://127.0.0.1:8765/api/downloads\")",
+      "Bash(curl -s -X POST \"http://127.0.0.1:8765/api/info\" -H \"Content-Type: application/json\" -d '{\"url\":\"https://www.youtube.com/watch?v=jNQXAC9IVRw\"}')",
+      "Bash(kill %1)",
+      "Bash(wait)",
+      "Bash(py -3.12 -m PyInstaller --noconfirm pglu.spec)",
+      "Bash(git -c user.email=you@example.com -c user.name=\"Pglu Dev\" commit -m \"Rename to Pglu, add FastAPI web dashboard, support --web flag in main entry\")",
+      "Bash(git rm *)",
+      "Bash(git -c user.email=you@example.com -c user.name=\"Pglu Dev\" commit -m \"Untrack dist/ and build/ artifacts\")"
+    ]
+  }
+}

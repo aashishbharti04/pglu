@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pglu</title>
+<style>
+  :root {
+    --bg: #0c1117;
+    --panel: #161b22;
+    --panel2: #1d242d;
+    --border: #2a3038;
+    --text: #e6edf3;
+    --muted: #9aa4b2;
+    --accent: #3294f5;
+    --accent-hover: #4ea2f7;
+    --danger: #f85149;
+    --good: #3fb950;
+    --tag: #58a6ff;
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 880px; margin: 0 auto; padding: 24px 16px 80px; }
+
+  header { display: flex; align-items: baseline; gap: 12px; margin-bottom: 18px; }
+  header h1 { margin: 0; font-size: 28px; letter-spacing: -0.4px; }
+  header small { color: var(--muted); font-size: 13px; }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 16px;
+    margin-bottom: 16px;
+  }
+
+  .row { display: flex; gap: 8px; }
+  .row > * { min-width: 0; }
+  .grow { flex: 1; }
+
+  input[type="text"], select {
+    width: 100%;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 11px 12px;
+    color: var(--text);
+    font-size: 14px;
+    outline: none;
+    transition: border-color 0.15s;
+  }
+  input[type="text"]:focus, select:focus {
+    border-color: var(--accent);
+  }
+
+  button {
+    background: var(--accent);
+    color: white;
+    border: none;
+    padding: 11px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    font-size: 14px;
+    transition: background 0.15s;
+    white-space: nowrap;
+  }
+  button:hover:not(:disabled) { background: var(--accent-hover); }
+  button:disabled { opacity: 0.55; cursor: not-allowed; }
+  button.muted {
+    background: var(--panel2);
+    color: var(--text);
+    border: 1px solid var(--border);
+  }
+  button.muted:hover:not(:disabled) { background: var(--border); }
+
+  .status {
+    color: var(--muted);
+    font-size: 13px;
+    min-height: 18px;
+    margin-top: 8px;
+  }
+  .status.error { color: var(--danger); }
+
+  .info-grid {
+    display: grid;
+    grid-template-columns: 200px 1fr;
+    gap: 16px;
+  }
+  @media (max-width: 600px) { .info-grid { grid-template-columns: 1fr; } }
+
+  .thumb-wrap {
+    background: var(--panel2);
+    border-radius: 10px;
+    overflow: hidden;
+    aspect-ratio: 16 / 9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .thumb-wrap img { width: 100%; height: 100%; object-fit: cover; }
+
+  .title { font-size: 17px; font-weight: 700; margin: 0 0 6px; line-height: 1.3; }
+  .meta { color: var(--muted); font-size: 13px; margin-bottom: 10px; }
+  .tags { color: var(--tag); font-size: 12px; margin-bottom: 10px; word-wrap: break-word; }
+  .desc { color: var(--text); font-size: 13px; line-height: 1.5;
+          max-height: 110px; overflow-y: auto; white-space: pre-wrap;
+          background: var(--panel2); padding: 10px; border-radius: 8px;
+          border: 1px solid var(--border); }
+
+  .quality-row {
+    display: grid;
+    grid-template-columns: 1fr auto auto;
+    gap: 8px;
+    align-items: center;
+    margin-top: 14px;
+  }
+  @media (max-width: 600px) {
+    .quality-row { grid-template-columns: 1fr; }
+  }
+
+  .audio-toggle {
+    display: flex; align-items: center; gap: 6px;
+    color: var(--muted); font-size: 13px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 9px 12px;
+    user-select: none;
+  }
+  .audio-toggle input { margin: 0; }
+
+  .progress-wrap { margin-top: 14px; }
+  .progress-bar {
+    width: 100%;
+    height: 8px;
+    background: var(--panel2);
+    border-radius: 6px;
+    overflow: hidden;
+    margin-bottom: 6px;
+  }
+  .progress-bar > div {
+    height: 100%;
+    background: linear-gradient(90deg, var(--accent), var(--accent-hover));
+    width: 0%;
+    transition: width 0.2s ease-out;
+  }
+  .progress-text { font-size: 12px; color: var(--muted); }
+
+  .file-list { display: flex; flex-direction: column; gap: 6px; }
+  .file-row {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 12px;
+    background: var(--panel2);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+  }
+  .file-row .name { flex: 1; min-width: 0; overflow: hidden;
+                    text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+  .file-row .size { color: var(--muted); font-size: 12px; }
+  .file-row a {
+    color: var(--accent); text-decoration: none; font-size: 13px;
+    border: 1px solid var(--border); padding: 5px 10px; border-radius: 6px;
+  }
+  .file-row a:hover { background: var(--border); }
+  .empty { color: var(--muted); font-size: 13px; text-align: center; padding: 24px; }
+
+  .download-dir {
+    color: var(--muted); font-size: 12px;
+    word-break: break-all; margin-top: 4px;
+  }
+
+  .hidden { display: none !important; }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <header>
+    <h1>Pglu</h1>
+    <small>YouTube . Instagram . videos . audio . images</small>
+  </header>
+
+  <!-- URL input -->
+  <div class="panel">
+    <div class="row">
+      <input id="url" class="grow" type="text"
+             placeholder="Paste a YouTube or Instagram URL"
+             autocomplete="off" autocapitalize="off" spellcheck="false">
+      <button id="paste-btn" class="muted" title="Paste from clipboard">Paste</button>
+      <button id="fetch-btn">Fetch info</button>
+    </div>
+    <div id="status" class="status"></div>
+  </div>
+
+  <!-- Info + format picker -->
+  <div id="info-panel" class="panel hidden">
+    <div class="info-grid">
+      <div class="thumb-wrap">
+        <img id="thumb" alt="">
+      </div>
+      <div>
+        <h2 id="title" class="title"></h2>
+        <div id="meta" class="meta"></div>
+        <div id="tags" class="tags"></div>
+        <div id="desc" class="desc"></div>
+      </div>
+    </div>
+
+    <div class="quality-row">
+      <select id="format-select"></select>
+      <label class="audio-toggle">
+        <input id="audio-only" type="checkbox">
+        Audio only (MP3)
+      </label>
+      <button id="download-btn">Download</button>
+    </div>
+
+    <div id="progress-wrap" class="progress-wrap hidden">
+      <div class="progress-bar"><div id="progress-fill"></div></div>
+      <div id="progress-text" class="progress-text"></div>
+    </div>
+  </div>
+
+  <!-- Downloads list -->
+  <div class="panel">
+    <div class="row" style="align-items: center; margin-bottom: 10px;">
+      <h3 class="grow" style="margin: 0; font-size: 16px;">My downloads</h3>
+      <button id="refresh-btn" class="muted">Refresh</button>
+    </div>
+    <div id="download-dir" class="download-dir"></div>
+    <div id="file-list" class="file-list" style="margin-top: 10px;"></div>
+  </div>
+
+</div>
+
+<script>
+const $ = (id) => document.getElementById(id);
+
+const ui = {
+  url: $('url'),
+  status: $('status'),
+  info: $('info-panel'),
+  thumb: $('thumb'),
+  title: $('title'),
+  meta: $('meta'),
+  tags: $('tags'),
+  desc: $('desc'),
+  fmtSelect: $('format-select'),
+  audio: $('audio-only'),
+  pasteBtn: $('paste-btn'),
+  fetchBtn: $('fetch-btn'),
+  downloadBtn: $('download-btn'),
+  progressWrap: $('progress-wrap'),
+  progressFill: $('progress-fill'),
+  progressText: $('progress-text'),
+  refreshBtn: $('refresh-btn'),
+  fileList: $('file-list'),
+  downloadDir: $('download-dir'),
+};
+
+let currentInfo = null;
+
+// ---------- helpers ----------
+
+function setStatus(msg, isError) {
+  ui.status.textContent = msg || '';
+  ui.status.classList.toggle('error', !!isError);
+}
+
+function fmtDur(sec) {
+  if (!sec) return '';
+  sec = Math.floor(sec);
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  return h ? `${h}:${String(m).padStart(2,'0')}:${String(s).padStart(2,'0')}`
+           : `${m}:${String(s).padStart(2,'0')}`;
+}
+function fmtCount(n) {
+  if (!n) return '';
+  if (n >= 1e6) return (n / 1e6).toFixed(1) + 'M';
+  if (n >= 1e3) return (n / 1e3).toFixed(1) + 'K';
+  return String(n);
+}
+function fmtSize(n) {
+  if (!n) return '';
+  for (const u of ['B','KB','MB','GB','TB']) {
+    if (n < 1024) return `${n.toFixed(1)} ${u}`;
+    n /= 1024;
+  }
+  return n + ' B';
+}
+
+// ---------- info fetch ----------
+
+async function fetchInfo() {
+  const url = ui.url.value.trim();
+  if (!url) { setStatus('Paste a URL first.', true); return; }
+  if (!/^https?:\/\//i.test(url)) { setStatus('URL must start with http:// or https://', true); return; }
+
+  ui.fetchBtn.disabled = true;
+  ui.fetchBtn.textContent = 'Fetching...';
+  setStatus('Fetching info...');
+  ui.info.classList.add('hidden');
+
+  try {
+    const res = await fetch('/api/info', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+    currentInfo = await res.json();
+    populateInfo(currentInfo);
+    setStatus('');
+  } catch (e) {
+    setStatus(`Error: ${e.message}`, true);
+  } finally {
+    ui.fetchBtn.disabled = false;
+    ui.fetchBtn.textContent = 'Fetch info';
+  }
+}
+
+function populateInfo(info) {
+  ui.thumb.src = info.thumbnail_url || '';
+  ui.title.textContent = info.title || '(no title)';
+  const metaBits = [];
+  if (info.uploader) metaBits.push(info.uploader);
+  if (info.duration) metaBits.push(fmtDur(info.duration));
+  if (info.view_count) metaBits.push(fmtCount(info.view_count) + ' views');
+  if (info.like_count) metaBits.push(fmtCount(info.like_count) + ' likes');
+  ui.meta.textContent = metaBits.join('  .  ');
+
+  ui.tags.textContent = (info.tags && info.tags.length)
+    ? info.tags.slice(0, 20).map(t => '#' + t).join('  ')
+    : '';
+  ui.desc.textContent = (info.description || '').slice(0, 1500);
+
+  // Format dropdown
+  ui.fmtSelect.innerHTML = '';
+  const best = document.createElement('option');
+  best.value = '';
+  best.textContent = 'Best available';
+  ui.fmtSelect.appendChild(best);
+  for (const f of info.formats || []) {
+    const o = document.createElement('option');
+    o.value = f.format_id;
+    o.textContent = f.label;
+    ui.fmtSelect.appendChild(o);
+  }
+
+  ui.info.classList.remove('hidden');
+  ui.progressWrap.classList.add('hidden');
+}
+
+// ---------- download + SSE ----------
+
+async function startDownload() {
+  if (!currentInfo) return;
+  ui.downloadBtn.disabled = true;
+  ui.downloadBtn.textContent = 'Starting...';
+  ui.progressWrap.classList.remove('hidden');
+  ui.progressFill.style.width = '0%';
+  ui.progressText.textContent = 'Starting...';
+
+  try {
+    const res = await fetch('/api/download', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        url: currentInfo.url,
+        format_id: ui.fmtSelect.value || null,
+        audio_only: ui.audio.checked,
+      }),
+    });
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+    const { job_id } = await res.json();
+    streamProgress(job_id);
+  } catch (e) {
+    ui.progressText.textContent = 'Error: ' + e.message;
+    ui.downloadBtn.disabled = false;
+    ui.downloadBtn.textContent = 'Retry';
+  }
+}
+
+function streamProgress(jobId) {
+  const es = new EventSource(`/api/progress/${jobId}`);
+  es.onmessage = (msg) => {
+    let ev;
+    try { ev = JSON.parse(msg.data); } catch { return; }
+
+    if (ev.kind === 'start') {
+      ui.progressText.textContent = ev.message || 'Starting...';
+    } else if (ev.kind === 'progress') {
+      if (ev.percent) ui.progressFill.style.width = ev.percent + '%';
+      const parts = [`${(ev.percent || 0).toFixed(1)}%`];
+      if (ev.speed) parts.push(ev.speed.trim());
+      if (ev.eta) parts.push('ETA ' + ev.eta.trim());
+      if (ev.message) parts.push(ev.message);
+      ui.progressText.textContent = parts.join('  ');
+    } else if (ev.kind === 'done') {
+      ui.progressFill.style.width = '100%';
+      ui.progressText.textContent = 'Saved: ' + (ev.file_path || '(file)');
+      ui.downloadBtn.disabled = false;
+      ui.downloadBtn.textContent = 'Download again';
+      es.close();
+      refreshFiles();
+    } else if (ev.kind === 'error') {
+      ui.progressText.textContent = 'Error: ' + (ev.message || 'unknown');
+      ui.downloadBtn.disabled = false;
+      ui.downloadBtn.textContent = 'Retry';
+      es.close();
+    }
+  };
+  es.onerror = () => {
+    if (es.readyState === EventSource.CLOSED) return;
+    ui.progressText.textContent = 'Lost connection to server';
+    es.close();
+    ui.downloadBtn.disabled = false;
+    ui.downloadBtn.textContent = 'Retry';
+  };
+}
+
+// ---------- downloads list ----------
+
+async function refreshFiles() {
+  try {
+    const res = await fetch('/api/downloads');
+    const data = await res.json();
+    ui.downloadDir.textContent = 'Folder: ' + data.dir;
+    ui.fileList.innerHTML = '';
+    if (!data.files.length) {
+      const empty = document.createElement('div');
+      empty.className = 'empty';
+      empty.textContent = 'No downloads yet.';
+      ui.fileList.appendChild(empty);
+      return;
+    }
+    for (const f of data.files) {
+      const row = document.createElement('div');
+      row.className = 'file-row';
+      const name = document.createElement('div');
+      name.className = 'name';
+      name.textContent = f.name;
+      const size = document.createElement('div');
+      size.className = 'size';
+      size.textContent = fmtSize(f.size);
+      const link = document.createElement('a');
+      link.href = '/api/file?rel=' + encodeURIComponent(f.rel);
+      link.textContent = 'Save';
+      link.setAttribute('download', f.name);
+      row.append(name, size, link);
+      ui.fileList.appendChild(row);
+    }
+  } catch (e) {
+    ui.downloadDir.textContent = 'Error: ' + e.message;
+  }
+}
+
+// ---------- wire events ----------
+
+ui.fetchBtn.addEventListener('click', fetchInfo);
+ui.url.addEventListener('keydown', (e) => { if (e.key === 'Enter') fetchInfo(); });
+ui.pasteBtn.addEventListener('click', async () => {
+  try {
+    const text = await navigator.clipboard.readText();
+    ui.url.value = (text || '').trim();
+  } catch {
+    setStatus('Clipboard access denied. Paste manually.', true);
+  }
+});
+ui.downloadBtn.addEventListener('click', startDownload);
+ui.refreshBtn.addEventListener('click', refreshFiles);
+
+refreshFiles();
+</script>
+</body>
+</html>

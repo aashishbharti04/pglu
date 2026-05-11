@@ -1,0 +1,17 @@
+__pycache__/
+*.pyc
+.venv/
+venv/
+.bin/
+.buildozer/
+bin/
+build/
+builds/
+dist/
+downloads/
+*.apk
+*.aab
+.idea/
+.vscode/
+*.log
+app_screenshot.png

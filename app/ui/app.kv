@@ -1,0 +1,323 @@
+#:kivy 2.3.0
+
+# ------------- shared widgets -------------
+
+<RoundedButton@Button>:
+    background_color: 0, 0, 0, 0
+    background_normal: ''
+    color: 1, 1, 1, 1
+    font_size: '16sp'
+    bg_color: (0.20, 0.55, 0.95, 1)
+    canvas.before:
+        Color:
+            rgba: self.bg_color if self.state == 'normal' else (self.bg_color[0]*0.8, self.bg_color[1]*0.8, self.bg_color[2]*0.8, 1)
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [12,]
+
+<MutedButton@RoundedButton>:
+    bg_color: (0.35, 0.40, 0.45, 1)
+
+<Card@BoxLayout>:
+    canvas.before:
+        Color:
+            rgba: 0.13, 0.15, 0.18, 1
+        RoundedRectangle:
+            pos: self.pos
+            size: self.size
+            radius: [14,]
+    padding: '12dp'
+
+# ------------- screens -------------
+
+<HomeScreen>:
+    BoxLayout:
+        orientation: 'vertical'
+        padding: '16dp'
+        spacing: '12dp'
+        canvas.before:
+            Color:
+                rgba: 0.07, 0.08, 0.10, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        Label:
+            text: 'Pglu'
+            font_size: '28sp'
+            bold: True
+            size_hint_y: None
+            height: '40dp'
+            color: 1, 1, 1, 1
+
+        Label:
+            text: 'YouTube . Instagram . videos . audio . images'
+            font_size: '13sp'
+            size_hint_y: None
+            height: '20dp'
+            color: 0.7, 0.7, 0.75, 1
+
+        Card:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: '160dp'
+            spacing: '8dp'
+
+            Label:
+                text: 'Paste a YouTube or Instagram URL'
+                size_hint_y: None
+                height: '24dp'
+                halign: 'left'
+                color: 0.85, 0.85, 0.9, 1
+
+            TextInput:
+                id: url_input
+                hint_text: 'https://...'
+                multiline: False
+                size_hint_y: None
+                height: '44dp'
+                font_size: '14sp'
+                background_color: 0.18, 0.20, 0.24, 1
+                foreground_color: 1, 1, 1, 1
+                cursor_color: 1, 1, 1, 1
+                padding: '10dp', '12dp'
+
+            BoxLayout:
+                size_hint_y: None
+                height: '44dp'
+                spacing: '8dp'
+
+                MutedButton:
+                    text: 'Paste'
+                    on_release: root.paste_clipboard()
+
+                MutedButton:
+                    text: 'Clear'
+                    on_release: url_input.text = ''
+
+                RoundedButton:
+                    text: 'Fetch info'
+                    on_release: root.fetch_info(url_input.text)
+
+        Label:
+            id: status_lbl
+            text: ''
+            size_hint_y: None
+            height: '24dp'
+            color: 0.95, 0.7, 0.5, 1
+
+        Widget:
+            # spacer
+            size_hint_y: 1
+
+        BoxLayout:
+            size_hint_y: None
+            height: '44dp'
+            spacing: '8dp'
+
+            MutedButton:
+                text: 'My downloads'
+                on_release: app.go_to('downloads')
+
+
+<InfoScreen>:
+    thumb: thumb
+    title_lbl: title_lbl
+    desc_lbl: desc_lbl
+    meta_lbl: meta_lbl
+    tags_lbl: tags_lbl
+    fmt_spinner: fmt_spinner
+    audio_chk: audio_chk
+    progress: progress
+    progress_lbl: progress_lbl
+    download_btn: download_btn
+
+    BoxLayout:
+        orientation: 'vertical'
+        padding: '12dp'
+        spacing: '8dp'
+        canvas.before:
+            Color:
+                rgba: 0.07, 0.08, 0.10, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        BoxLayout:
+            size_hint_y: None
+            height: '40dp'
+            spacing: '8dp'
+            MutedButton:
+                text: '< Back'
+                size_hint_x: None
+                width: '90dp'
+                on_release: app.go_to('home')
+            Label:
+                text: 'Media info'
+                font_size: '18sp'
+                bold: True
+                color: 1, 1, 1, 1
+
+        ScrollView:
+            do_scroll_x: False
+            BoxLayout:
+                orientation: 'vertical'
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: '10dp'
+
+                AsyncImage:
+                    id: thumb
+                    size_hint_y: None
+                    height: '200dp'
+                    allow_stretch: True
+                    keep_ratio: True
+
+                Label:
+                    id: title_lbl
+                    text: ''
+                    font_size: '17sp'
+                    bold: True
+                    color: 1, 1, 1, 1
+                    size_hint_y: None
+                    text_size: self.width, None
+                    height: self.texture_size[1]
+                    halign: 'left'
+
+                Label:
+                    id: meta_lbl
+                    text: ''
+                    color: 0.75, 0.78, 0.82, 1
+                    size_hint_y: None
+                    text_size: self.width, None
+                    height: self.texture_size[1]
+                    halign: 'left'
+
+                Label:
+                    id: tags_lbl
+                    text: ''
+                    color: 0.55, 0.75, 0.95, 1
+                    size_hint_y: None
+                    text_size: self.width, None
+                    height: self.texture_size[1]
+                    halign: 'left'
+
+                Label:
+                    id: desc_lbl
+                    text: ''
+                    color: 0.85, 0.85, 0.9, 1
+                    size_hint_y: None
+                    text_size: self.width, None
+                    height: self.texture_size[1]
+                    halign: 'left'
+
+        Card:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: '160dp'
+            spacing: '6dp'
+
+            Label:
+                text: 'Pick quality'
+                size_hint_y: None
+                height: '20dp'
+                color: 0.85, 0.85, 0.9, 1
+                halign: 'left'
+                text_size: self.width, None
+
+            Spinner:
+                id: fmt_spinner
+                text: 'Best available'
+                values: []
+                size_hint_y: None
+                height: '40dp'
+                background_color: 0.18, 0.20, 0.24, 1
+                color: 1, 1, 1, 1
+
+            BoxLayout:
+                size_hint_y: None
+                height: '32dp'
+                CheckBox:
+                    id: audio_chk
+                    size_hint_x: None
+                    width: '36dp'
+                    color: 1, 1, 1, 1
+                Label:
+                    text: 'Audio only (MP3)'
+                    color: 0.85, 0.85, 0.9, 1
+                    halign: 'left'
+                    text_size: self.width, None
+
+            RoundedButton:
+                id: download_btn
+                text: 'Download'
+                size_hint_y: None
+                height: '44dp'
+                on_release: root.start_download()
+
+        BoxLayout:
+            orientation: 'vertical'
+            size_hint_y: None
+            height: '60dp'
+            spacing: '4dp'
+
+            ProgressBar:
+                id: progress
+                max: 100
+                value: 0
+                size_hint_y: None
+                height: '20dp'
+
+            Label:
+                id: progress_lbl
+                text: ''
+                color: 0.85, 0.85, 0.9, 1
+                size_hint_y: None
+                height: '24dp'
+                font_size: '12sp'
+
+
+<DownloadsScreen>:
+    files_box: files_box
+
+    BoxLayout:
+        orientation: 'vertical'
+        padding: '12dp'
+        spacing: '8dp'
+        canvas.before:
+            Color:
+                rgba: 0.07, 0.08, 0.10, 1
+            Rectangle:
+                pos: self.pos
+                size: self.size
+
+        BoxLayout:
+            size_hint_y: None
+            height: '40dp'
+            spacing: '8dp'
+            MutedButton:
+                text: '< Back'
+                size_hint_x: None
+                width: '90dp'
+                on_release: app.go_to('home')
+            Label:
+                text: 'My downloads'
+                font_size: '18sp'
+                bold: True
+                color: 1, 1, 1, 1
+            MutedButton:
+                text: 'Refresh'
+                size_hint_x: None
+                width: '100dp'
+                on_release: root.refresh()
+
+        ScrollView:
+            do_scroll_x: False
+            BoxLayout:
+                id: files_box
+                orientation: 'vertical'
+                size_hint_y: None
+                height: self.minimum_height
+                spacing: '6dp'
+                padding: 0, '4dp'

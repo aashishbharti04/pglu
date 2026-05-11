@@ -1,0 +1,5 @@
+yt-dlp>=2025.1.15
+instaloader>=4.13
+requests>=2.32
+fastapi>=0.115
+uvicorn[standard]>=0.30

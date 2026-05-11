@@ -1,0 +1,35 @@
+{
+  "version": "0.0.1",
+  "configurations": [
+    {
+      "name": "Pglu web dashboard",
+      "runtimeExecutable": "py",
+      "runtimeArgs": ["-3.12", "-m", "app.web.server", "--host", "127.0.0.1", "--port", "8765"],
+      "port": 8765
+    },
+    {
+      "name": "Pglu web dashboard (LAN-accessible)",
+      "runtimeExecutable": "py",
+      "runtimeArgs": ["-3.12", "-m", "app.web.server", "--host", "0.0.0.0", "--port", "8765"],
+      "port": 8765
+    },
+    {
+      "name": "Pglu desktop (Kivy)",
+      "runtimeExecutable": "py",
+      "runtimeArgs": ["-3.12", "main.py"],
+      "port": null
+    },
+    {
+      "name": "Pglu CLI - fetch info",
+      "runtimeExecutable": "py",
+      "runtimeArgs": ["-3.14", "-m", "app.cli", "info", "<paste-url-here>"],
+      "port": null
+    },
+    {
+      "name": "Pglu CLI - download",
+      "runtimeExecutable": "py",
+      "runtimeArgs": ["-3.14", "-m", "app.cli", "download", "<paste-url-here>", "--out=downloads"],
+      "port": null
+    }
+  ]
+}
