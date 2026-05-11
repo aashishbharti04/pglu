@@ -20,8 +20,8 @@ version = 0.1.0
 # once a base build is green.
 requirements = python3,kivy==2.3.1,certifi,charset-normalizer,idna,urllib3,requests,mutagen,yt-dlp,instaloader
 
-# App icon (optional — drop your own at assets/icon.png).
-# icon.filename = assets/icon.png
+# App icon (shown on the launcher and in Settings -> Apps).
+icon.filename = app/assets/icon.png
 
 # Orientation: portrait phone-only.
 orientation = portrait

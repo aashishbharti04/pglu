@@ -283,14 +283,23 @@ class DownloadsScreen(Screen):
 
 # -----------------------------------------------------------------------------
 
+_ICON_PATH = Path(__file__).resolve().parent.parent / "assets" / "icon.png"
+
+
 class PgluApp(App):
     title = "Pglu"
+    icon = str(_ICON_PATH) if _ICON_PATH.exists() else ""
 
     def build(self):
         Builder.load_file(str(KV_PATH))
         request_android_permissions()
         if platform != "android":
             Window.size = (380, 720)
+            if _ICON_PATH.exists():
+                try:
+                    Window.set_icon(str(_ICON_PATH))
+                except Exception:
+                    pass
 
         sm = ScreenManager(transition=FadeTransition(duration=0.15))
         sm.add_widget(HomeScreen(name="home"))

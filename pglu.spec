@@ -9,6 +9,12 @@ block_cipher = None
 datas = [
     ("app/ui/app.kv", "app/ui"),
     ("app/web/static/index.html", "app/web/static"),
+    ("app/web/static/favicon.png", "app/web/static"),
+    ("app/web/static/favicon.ico", "app/web/static"),
+    ("app/web/static/logo.png", "app/web/static"),
+    ("app/web/static/bg.jpg", "app/web/static"),
+    ("app/web/static/manifest.json", "app/web/static"),
+    ("app/assets/icon.png", "app/assets"),
 ]
 # Bundle yt-dlp's extractor + crypto data files so it works inside the .exe
 datas += collect_data_files("yt_dlp")
@@ -54,6 +60,7 @@ exe = EXE(
     [],
     exclude_binaries=True,
     name="Pglu",
+    icon="app/assets/icon.ico",
     debug=False,
     bootloader_ignore_signals=False,
     strip=False,

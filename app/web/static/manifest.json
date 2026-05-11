@@ -1,0 +1,13 @@
+{
+  "name": "Pglu",
+  "short_name": "Pglu",
+  "description": "Download YouTube and Instagram videos, audio, and images at any quality.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0c1117",
+  "theme_color": "#0c1117",
+  "icons": [
+    { "src": "/static/favicon.png", "sizes": "256x256", "type": "image/png" },
+    { "src": "/static/logo.png",    "sizes": "512x512", "type": "image/png" }
+  ]
+}

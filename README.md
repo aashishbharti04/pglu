@@ -1,5 +1,7 @@
 # Pglu
 
+<p align="center"><img src="app/assets/banner.png" alt="Pglu" width="100%"></p>
+
 Download YouTube + Instagram videos, audio, images — any quality, with full
 metadata (title, description, tags, thumbnail). One engine, three ways to use it:
 
