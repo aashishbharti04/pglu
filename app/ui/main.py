@@ -2,7 +2,9 @@
 from __future__ import annotations
 
 import os
+import sys
 import threading
+import traceback
 from pathlib import Path
 from typing import Optional
 
@@ -11,6 +13,7 @@ from kivy.clock import mainthread
 from kivy.lang import Builder
 from kivy.uix.label import Label
 from kivy.uix.boxlayout import BoxLayout
+from kivy.uix.scrollview import ScrollView
 from kivy.uix.screenmanager import Screen, ScreenManager, FadeTransition
 from kivy.core.clipboard import Clipboard
 from kivy.core.window import Window
@@ -18,7 +21,11 @@ from kivy.metrics import dp
 from kivy.utils import platform
 
 from app.engine import DownloadJob, ProgressEvent, MediaInfo, engine_for
-from app.ui.storage import default_download_dir, request_android_permissions
+from app.ui.storage import (
+    default_download_dir,
+    request_android_permissions,
+    write_crash_log,
+)
 
 
 KV_PATH = Path(__file__).with_name("app.kv")
@@ -286,27 +293,64 @@ class DownloadsScreen(Screen):
 _ICON_PATH = Path(__file__).resolve().parent.parent / "assets" / "icon.png"
 
 
+def _build_error_screen(message: str) -> BoxLayout:
+    """Fallback UI if the real screens fail to build. Shows the traceback
+    instead of letting Android kill the process with no feedback."""
+    root = BoxLayout(orientation="vertical", padding=dp(12), spacing=dp(8))
+    root.add_widget(Label(
+        text="Pglu hit a startup error",
+        font_size="20sp",
+        bold=True,
+        size_hint_y=None,
+        height=dp(40),
+        color=(1, 0.5, 0.4, 1),
+    ))
+    scroll = ScrollView()
+    body = Label(
+        text=message,
+        font_size="12sp",
+        color=(1, 1, 1, 1),
+        size_hint_y=None,
+        halign="left",
+        valign="top",
+    )
+    body.bind(
+        width=lambda inst, val: setattr(inst, "text_size", (val, None)),
+        texture_size=lambda inst, val: setattr(inst, "height", val[1]),
+    )
+    scroll.add_widget(body)
+    root.add_widget(scroll)
+    return root
+
+
 class PgluApp(App):
     title = "Pglu"
     icon = str(_ICON_PATH) if _ICON_PATH.exists() else ""
 
     def build(self):
-        Builder.load_file(str(KV_PATH))
-        request_android_permissions()
-        if platform != "android":
-            Window.size = (380, 720)
-            if _ICON_PATH.exists():
-                try:
-                    Window.set_icon(str(_ICON_PATH))
-                except Exception:
-                    pass
+        try:
+            Builder.load_file(str(KV_PATH))
+            request_android_permissions()
+            if platform != "android":
+                Window.size = (380, 720)
+                if _ICON_PATH.exists():
+                    try:
+                        Window.set_icon(str(_ICON_PATH))
+                    except Exception:
+                        pass
 
-        sm = ScreenManager(transition=FadeTransition(duration=0.15))
-        sm.add_widget(HomeScreen(name="home"))
-        sm.add_widget(InfoScreen(name="info"))
-        sm.add_widget(DownloadsScreen(name="downloads"))
-        self.sm = sm
-        return sm
+            sm = ScreenManager(transition=FadeTransition(duration=0.15))
+            sm.add_widget(HomeScreen(name="home"))
+            sm.add_widget(InfoScreen(name="info"))
+            sm.add_widget(DownloadsScreen(name="downloads"))
+            self.sm = sm
+            return sm
+        except Exception:
+            tb = traceback.format_exc()
+            log_path = write_crash_log(tb)
+            return _build_error_screen(
+                f"Saved to:\n{log_path}\n\n{tb}"
+            )
 
     def show_info(self, info: MediaInfo) -> None:
         info_screen: InfoScreen = self.sm.get_screen("info")  # type: ignore[assignment]
@@ -317,7 +361,24 @@ class PgluApp(App):
         self.sm.current = name
 
 
+def _install_excepthook() -> None:
+    """Catch uncaught exceptions and write them to a log file so the user can
+    see *why* the app died instead of just watching it disappear."""
+    prev = sys.excepthook
+
+    def hook(exc_type, exc, tb):
+        try:
+            write_crash_log("".join(traceback.format_exception(exc_type, exc, tb)))
+        except Exception:
+            pass
+        if prev:
+            prev(exc_type, exc, tb)
+
+    sys.excepthook = hook
+
+
 def main() -> None:
+    _install_excepthook()
     PgluApp().run()
 
 
