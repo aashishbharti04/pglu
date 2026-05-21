@@ -9,16 +9,18 @@ package.domain = com.pglu.app
 
 # Source directory and which files to include.
 source.dir = .
-source.include_exts = py,kv,png,jpg,jpeg,atlas,json,txt,html,css,js
-source.include_patterns = app/*,app/ui/*,app/engine/*,app/web/*,app/web/static/*,assets/*
+source.include_exts = py,kv,png,jpg,jpeg,atlas,json,txt,html,css,js,ico
+source.include_patterns = app/*,app/ui/*,app/engine/*,app/web/*,app/web/static/*,app/assets/*,assets/*
 
 # App version.
 version = 0.1.0
 
 # Python deps. python3 + kivy + our download stack.
-# Trimmed to the proven minimum - extras like brotli/pillow can be added later
-# once a base build is green.
-requirements = python3,kivy==2.3.1,certifi,charset-normalizer,idna,urllib3,requests,mutagen,yt-dlp,instaloader
+# - openssl/sqlite3/pyjnius/android are listed explicitly so missing recipes
+#   surface at build time rather than as a silent runtime crash.
+# - setuptools is needed at runtime because instaloader's lxml/PIL fallbacks
+#   use pkg_resources on some Python builds.
+requirements = python3,kivy==2.3.1,openssl,sqlite3,pyjnius,android,setuptools,certifi,charset-normalizer,idna,urllib3,requests,mutagen,yt-dlp,instaloader
 
 # App icon (shown on the launcher and in Settings -> Apps).
 icon.filename = app/assets/icon.png
