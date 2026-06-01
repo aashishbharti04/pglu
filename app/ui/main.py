@@ -137,6 +137,11 @@ class InfoScreen(Screen):
         self.download_btn.disabled = False
         self.download_btn.text = "Download"
 
+        # Reset the explain panel for this new item.
+        self.explain_lbl.text = ""
+        self.explain_btn.disabled = False
+        self.explain_btn.text = "Explain"
+
     def start_download(self) -> None:
         if self._info is None:
             return
@@ -193,6 +198,85 @@ class InfoScreen(Screen):
             self.progress_lbl.text = f"Error: {ev.message[:300]}"
             self.download_btn.disabled = False
             self.download_btn.text = "Retry"
+
+    # ---- "Explain this video" (Gemini) -------------------------------------
+
+    def explain(self) -> None:
+        if self._info is None:
+            return
+        from app.ui.storage import get_gemini_api_key
+        if not get_gemini_api_key():
+            self._prompt_api_key()
+            return
+        self.explain_btn.disabled = True
+        self.explain_btn.text = "Explaining..."
+        self.explain_lbl.text = "[i]Fetching a clip and analyzing with Gemini (30-90s)...[/i]"
+        threading.Thread(target=self._explain_worker, args=(self._info,), daemon=True).start()
+
+    def _explain_worker(self, info: MediaInfo) -> None:
+        try:
+            from app.engine.analyzer import explain_url
+            from app.ui.storage import cache_dir, get_gemini_api_key
+            text = explain_url(
+                info, info.url, get_gemini_api_key(), cache_dir(),
+                on_status=self._explain_status,
+            )
+            self._on_explain_done(text)
+        except Exception as e:  # noqa: BLE001
+            self._on_explain_error(str(e))
+
+    @mainthread
+    def _explain_status(self, msg: str) -> None:
+        self.explain_lbl.text = f"[i]{msg}[/i]"
+
+    @mainthread
+    def _on_explain_done(self, text: str) -> None:
+        self.explain_lbl.text = "[b]What's in this video:[/b]\n" + text
+        self.explain_btn.disabled = False
+        self.explain_btn.text = "Explain again"
+
+    @mainthread
+    def _on_explain_error(self, msg: str) -> None:
+        self.explain_lbl.text = f"[color=ff8866]Explain failed: {msg[:300]}[/color]"
+        self.explain_btn.disabled = False
+        self.explain_btn.text = "Explain"
+
+    def _prompt_api_key(self) -> None:
+        """Popup to paste a free Gemini API key the first time Explain is used."""
+        from kivy.uix.popup import Popup
+        from kivy.uix.textinput import TextInput
+        from kivy.uix.button import Button
+        from app.ui.storage import get_gemini_api_key, set_gemini_api_key
+
+        box = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(10))
+        box.add_widget(Label(
+            text="Paste your free Google Gemini API key.\nGet one at aistudio.google.com/apikey",
+            size_hint_y=None, height=dp(56), halign="center", valign="middle",
+            color=(0.9, 0.9, 0.95, 1),
+        ))
+        ti = TextInput(
+            text=get_gemini_api_key(), multiline=False, password=True,
+            size_hint_y=None, height=dp(44), hint_text="AIza...",
+        )
+        box.add_widget(ti)
+
+        row = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(46), spacing=dp(8))
+        popup = Popup(title="Gemini API key", content=box, size_hint=(0.92, None), height=dp(230))
+
+        def _save(*_):
+            set_gemini_api_key(ti.text.strip())
+            popup.dismiss()
+            if ti.text.strip():
+                self.explain()
+
+        cancel_btn = Button(text="Cancel")
+        cancel_btn.bind(on_release=lambda *_: popup.dismiss())
+        save_btn = Button(text="Save & explain")
+        save_btn.bind(on_release=_save)
+        row.add_widget(cancel_btn)
+        row.add_widget(save_btn)
+        box.add_widget(row)
+        popup.open()
 
 
 # -----------------------------------------------------------------------------

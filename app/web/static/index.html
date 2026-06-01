@@ -201,6 +201,17 @@
     word-break: break-all; margin-top: 4px;
   }
 
+  .explain-wrap { margin-top: 12px; }
+  .explain-text {
+    color: var(--text); font-size: 14px; line-height: 1.6;
+    white-space: pre-wrap; background: var(--panel2);
+    padding: 12px; border-radius: 8px; border: 1px solid var(--border);
+  }
+  .explain-text.loading { color: var(--muted); font-style: italic; }
+  .explain-text.error { color: var(--danger); }
+  .explain-text b { color: var(--accent-hover); font-weight: 700; }
+  button.explain { width: 100%; }
+
   .hidden { display: none !important; }
 </style>
 </head>
@@ -213,6 +224,7 @@
       <h1>Pglu</h1>
       <small>YouTube . Instagram . videos . audio . images</small>
     </div>
+    <button id="key-btn" class="muted" style="margin-left:auto;" title="Set Gemini API key">API key</button>
   </header>
 
   <!-- URL input -->
@@ -254,6 +266,13 @@
       <div class="progress-bar"><div id="progress-fill"></div></div>
       <div id="progress-text" class="progress-text"></div>
     </div>
+
+    <div class="row" style="margin-top:12px;">
+      <button id="explain-btn" class="explain">✨ Explain this video</button>
+    </div>
+    <div id="explain-wrap" class="explain-wrap hidden">
+      <div id="explain-text" class="explain-text"></div>
+    </div>
   </div>
 
   <!-- Downloads list -->
@@ -291,6 +310,10 @@ const ui = {
   refreshBtn: $('refresh-btn'),
   fileList: $('file-list'),
   downloadDir: $('download-dir'),
+  keyBtn: $('key-btn'),
+  explainBtn: $('explain-btn'),
+  explainWrap: $('explain-wrap'),
+  explainText: $('explain-text'),
 };
 
 let currentInfo = null;
@@ -387,6 +410,73 @@ function populateInfo(info) {
 
   ui.info.classList.remove('hidden');
   ui.progressWrap.classList.add('hidden');
+
+  // Reset the explain panel for the new item.
+  ui.explainWrap.classList.add('hidden');
+  ui.explainText.textContent = '';
+  ui.explainBtn.disabled = false;
+  ui.explainBtn.textContent = '✨ Explain this video';
+}
+
+// ---------- explain (Gemini) ----------
+
+async function setApiKey() {
+  const key = prompt(
+    'Paste your free Google Gemini API key.\nGet one at https://aistudio.google.com/apikey'
+  );
+  if (key === null) return false;          // cancelled
+  try {
+    await fetch('/api/settings', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ gemini_api_key: key.trim() }),
+    });
+    return !!key.trim();
+  } catch (e) {
+    setStatus('Could not save key: ' + e.message, true);
+    return false;
+  }
+}
+
+async function explainVideo() {
+  if (!currentInfo) return;
+  ui.explainBtn.disabled = true;
+  ui.explainBtn.textContent = 'Explaining...';
+  ui.explainWrap.classList.remove('hidden');
+  ui.explainText.className = 'explain-text loading';
+  ui.explainText.textContent = 'Fetching a clip and analyzing with Gemini (30-90s)...';
+
+  try {
+    const res = await fetch('/api/explain', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url: currentInfo.url }),
+    });
+    if (res.status === 428) {            // no API key configured yet
+      const ok = await setApiKey();
+      ui.explainBtn.disabled = false;
+      ui.explainBtn.textContent = '✨ Explain this video';
+      ui.explainWrap.classList.add('hidden');
+      if (ok) explainVideo();            // retry now that a key exists
+      return;
+    }
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({}));
+      throw new Error(err.detail || `HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    ui.explainText.className = 'explain-text';
+    ui.explainText.innerHTML =
+      '<b>What’s in this video:</b>\n' +
+      (data.text || '').replace(/&/g, '&amp;').replace(/</g, '&lt;');
+    ui.explainBtn.textContent = 'Explain again';
+  } catch (e) {
+    ui.explainText.className = 'explain-text error';
+    ui.explainText.textContent = 'Explain failed: ' + e.message;
+    ui.explainBtn.textContent = '✨ Explain this video';
+  } finally {
+    ui.explainBtn.disabled = false;
+  }
 }
 
 // ---------- download + SSE ----------
@@ -510,6 +600,8 @@ ui.pasteBtn.addEventListener('click', async () => {
 });
 ui.downloadBtn.addEventListener('click', startDownload);
 ui.refreshBtn.addEventListener('click', refreshFiles);
+ui.explainBtn.addEventListener('click', explainVideo);
+ui.keyBtn.addEventListener('click', setApiKey);
 
 refreshFiles();
 </script>

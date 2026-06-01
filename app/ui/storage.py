@@ -1,10 +1,13 @@
 """Pick a sensible default download folder for the current platform."""
 from __future__ import annotations
 
+import json
 import os
 import sys
 import time
+import tempfile
 from pathlib import Path
+from typing import Any, Optional
 
 
 def _is_android() -> bool:
@@ -126,3 +129,80 @@ def write_crash_log(message: str) -> str:
     except Exception:
         pass
     return "(no writable location)"
+
+
+# -----------------------------------------------------------------------------
+# Scratch cache + small settings store (used by the "Explain video" feature)
+# -----------------------------------------------------------------------------
+
+def cache_dir() -> Path:
+    """A writable scratch directory for temporary clips. Cleaned by callers."""
+    if _is_android():
+        try:
+            from android.storage import app_storage_path  # type: ignore
+            base = Path(app_storage_path()) / "cache"
+        except Exception:
+            base = Path(os.environ.get("ANDROID_PRIVATE", "/data/local/tmp")) / "pglu_cache"
+    else:
+        base = Path(tempfile.gettempdir()) / "pglu"
+    try:
+        base.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+    return base
+
+
+def _settings_path() -> Path:
+    """Where the small JSON settings file (API keys etc.) lives."""
+    if _is_android():
+        try:
+            from android.storage import app_storage_path  # type: ignore
+            base = Path(app_storage_path())
+        except Exception:
+            base = Path(os.environ.get("ANDROID_PRIVATE", "/data/local/tmp"))
+    else:
+        base = Path(os.path.expanduser("~")) / ".pglu"
+    try:
+        base.mkdir(parents=True, exist_ok=True)
+    except Exception:
+        pass
+    return base / "settings.json"
+
+
+def _load_settings() -> dict:
+    p = _settings_path()
+    try:
+        if p.exists():
+            return json.loads(p.read_text(encoding="utf-8")) or {}
+    except Exception:
+        pass
+    return {}
+
+
+def get_setting(key: str, default: Any = None) -> Any:
+    return _load_settings().get(key, default)
+
+
+def set_setting(key: str, value: Any) -> None:
+    """Persist one setting. Never raises — settings are best-effort."""
+    data = _load_settings()
+    data[key] = value
+    try:
+        _settings_path().write_text(
+            json.dumps(data, indent=2, ensure_ascii=False), encoding="utf-8"
+        )
+    except Exception:
+        pass
+
+
+def get_gemini_api_key() -> str:
+    """The Gemini API key, from the GEMINI_API_KEY env var (preferred) or the
+    saved settings file. Returns '' if none is set."""
+    env = (os.environ.get("GEMINI_API_KEY") or "").strip()
+    if env:
+        return env
+    return str(get_setting("gemini_api_key", "") or "").strip()
+
+
+def set_gemini_api_key(value: str) -> None:
+    set_setting("gemini_api_key", (value or "").strip())

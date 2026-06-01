@@ -29,7 +29,12 @@ from fastapi.responses import (
 from fastapi.staticfiles import StaticFiles
 
 from app.engine import DownloadJob, ProgressEvent, MediaInfo, engine_for
-from app.ui.storage import default_download_dir
+from app.ui.storage import (
+    default_download_dir,
+    cache_dir,
+    get_gemini_api_key,
+    set_gemini_api_key,
+)
 
 
 STATIC_DIR = Path(__file__).parent / "static"
@@ -199,6 +204,47 @@ async def api_progress(job_id: str, request: Request) -> StreamingResponse:
         media_type="text/event-stream",
         headers={"Cache-Control": "no-cache", "X-Accel-Buffering": "no"},
     )
+
+
+@app.get("/api/settings")
+async def api_get_settings() -> JSONResponse:
+    """Report whether a Gemini key is configured (never return the key itself)."""
+    return JSONResponse({"has_gemini_key": bool(get_gemini_api_key())})
+
+
+@app.post("/api/settings")
+async def api_set_settings(payload: dict) -> JSONResponse:
+    key = (payload.get("gemini_api_key") or "").strip()
+    set_gemini_api_key(key)
+    return JSONResponse({"ok": True, "has_gemini_key": bool(get_gemini_api_key())})
+
+
+@app.post("/api/explain")
+async def api_explain(payload: dict) -> JSONResponse:
+    """Explain what's inside the video/image at `url` using Gemini."""
+    url = (payload.get("url") or "").strip()
+    if not url:
+        raise HTTPException(status_code=400, detail="Missing 'url'")
+    api_key = get_gemini_api_key()
+    if not api_key:
+        raise HTTPException(status_code=428, detail="no_api_key")
+
+    def _run() -> str:
+        from app.engine.analyzer import explain_url, AnalysisError
+        engine = engine_for(url)
+        info = engine.fetch_info(url)
+        try:
+            return explain_url(info, url, api_key, cache_dir())
+        except AnalysisError as e:
+            raise HTTPException(status_code=502, detail=str(e))
+
+    try:
+        text = await asyncio.to_thread(_run)
+    except HTTPException:
+        raise
+    except Exception as e:  # noqa: BLE001
+        raise HTTPException(status_code=502, detail=str(e))
+    return JSONResponse({"text": text})
 
 
 @app.get("/api/downloads")
