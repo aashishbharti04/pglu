@@ -16,16 +16,19 @@ source.include_patterns = app/*,app/ui/*,app/engine/*,app/web/*,app/web/static/*
 version = 0.1.0
 
 # Python deps. python3 + kivy + our download stack.
-# - python3/hostpython3 are PINNED to 3.11.9. Without a pin, python-for-android
+# - python3/hostpython3 are PINNED to 3.13.9. Without a pin, python-for-android
 #   builds against the newest CPython it knows about (3.14), which Kivy 2.3.1
 #   does not support — the app then crashes the instant `import kivy` runs, before
-#   any on-screen error handler can fire. 3.11.x is the most widely validated
-#   Python for Kivy 2.3.1 on Android. Keep both pins in lock-step.
+#   any on-screen error handler can fire. 3.13 is the highest Python that Kivy
+#   2.3.1 supports, and it stays one minor below p4a's native 3.14 so the host
+#   build/venv (pip, ensurepip) remains internally consistent — pinning further
+#   back (e.g. 3.11) made p4a's venv bootstrap a mismatched vendored resolvelib
+#   and the build died. Keep both pins in lock-step.
 # - openssl/sqlite3/pyjnius/android are listed explicitly so missing recipes
 #   surface at build time rather than as a silent runtime crash.
 # - setuptools is needed at runtime because instaloader's lxml/PIL fallbacks
 #   use pkg_resources on some Python builds.
-requirements = python3==3.11.9,hostpython3==3.11.9,kivy==2.3.1,openssl,sqlite3,pyjnius,android,setuptools,certifi,charset-normalizer,idna,urllib3,requests,mutagen,yt-dlp,instaloader
+requirements = python3==3.13.9,hostpython3==3.13.9,kivy==2.3.1,openssl,sqlite3,pyjnius,android,setuptools,certifi,charset-normalizer,idna,urllib3,requests,mutagen,yt-dlp,instaloader
 
 # App icon (shown on the launcher and in Settings -> Apps).
 icon.filename = app/assets/icon.png
