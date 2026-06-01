@@ -41,12 +41,32 @@ def _run_web() -> None:
     web_main()
 
 
+def _log_startup_crash(tb: str) -> None:
+    """Best-effort: persist a fatal startup traceback. app.ui.storage only
+    imports the stdlib, so this is safe to call even when the Kivy import that
+    follows is what blew up."""
+    try:
+        from app.ui.storage import write_crash_log
+        write_crash_log(tb)
+    except Exception:
+        pass
+
+
 def main() -> None:
     if "--web" in sys.argv:
         _run_web()
         return
-    from app.ui.main import main as desktop_main
-    desktop_main()
+    # `import kivy` happens during this import, before app.ui.main installs its
+    # own excepthook. If the bundled Python is incompatible with Kivy (e.g. a
+    # mismatched python-for-android build), the import dies here with no UI —
+    # so catch it, leave a crash log the user can find, then re-raise.
+    try:
+        from app.ui.main import main as desktop_main
+        desktop_main()
+    except Exception:
+        import traceback
+        _log_startup_crash(traceback.format_exc())
+        raise
 
 
 if __name__ == "__main__":
