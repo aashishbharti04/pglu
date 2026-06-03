@@ -1,91 +1,150 @@
 #:kivy 2.3.0
 
-# ------------- shared widgets -------------
+# =====================================================================
+#  Pglu — premium dark theme
+#  Palette (matches the web dashboard):
+#    bg      0.039 0.055 0.078     accent   0.231 0.557 1.0
+#    card    0.094 0.118 0.157     accent2  0.486 0.361 1.0
+#    panel2  0.102 0.133 0.173     text     0.918 0.941 0.969
+#    border  0.157 0.188 0.255     muted    0.576 0.631 0.710
+# =====================================================================
 
-<RoundedButton@Button>:
+# ---------------- shared widgets ----------------
+
+<AppButton@Button>:
     background_color: 0, 0, 0, 0
     background_normal: ''
+    background_down: ''
     color: 1, 1, 1, 1
     font_size: '16sp'
-    bg_color: (0.20, 0.55, 0.95, 1)
+    bold: True
+    bg_color: (0.231, 0.557, 1.0, 1)
     canvas.before:
         Color:
-            rgba: self.bg_color if self.state == 'normal' else (self.bg_color[0]*0.8, self.bg_color[1]*0.8, self.bg_color[2]*0.8, 1)
+            rgba: (self.bg_color[0]*0.82, self.bg_color[1]*0.82, self.bg_color[2]*0.82, 1) if self.state == 'down' else self.bg_color
         RoundedRectangle:
             pos: self.pos
             size: self.size
-            radius: [12,]
+            radius: [13,]
 
-<MutedButton@RoundedButton>:
-    bg_color: (0.35, 0.40, 0.45, 1)
+# Kept as RoundedButton for backwards-compat with existing ids/usages.
+<RoundedButton@AppButton>:
+    bg_color: (0.231, 0.557, 1.0, 1)
+
+<MutedButton@AppButton>:
+    bg_color: (0.16, 0.19, 0.25, 1)
+    color: 0.92, 0.94, 0.97, 1
+
+<AccentButton@AppButton>:
+    bg_color: (0.486, 0.361, 1.0, 1)
 
 <Card@BoxLayout>:
+    padding: '14dp'
     canvas.before:
         Color:
-            rgba: 0.13, 0.15, 0.18, 1
+            rgba: 0.094, 0.118, 0.157, 1
         RoundedRectangle:
             pos: self.pos
             size: self.size
-            radius: [14,]
-    padding: '12dp'
+            radius: [16,]
+    canvas.after:
+        Color:
+            rgba: 1, 1, 1, 0.06
+        Line:
+            rounded_rectangle: (self.x, self.y, self.width, self.height, 16)
+            width: 1.0
 
-# ------------- screens -------------
+<Screen>:
+    canvas.before:
+        Color:
+            rgba: 0.039, 0.055, 0.078, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+# A thin gradient-ish accent strip used at the top of each screen.
+<AccentBar@Widget>:
+    size_hint_y: None
+    height: '3dp'
+    canvas:
+        Color:
+            rgba: 0.231, 0.557, 1.0, 1
+        Rectangle:
+            pos: self.pos
+            size: self.size
+
+# ---------------- Home ----------------
 
 <HomeScreen>:
     BoxLayout:
         orientation: 'vertical'
-        padding: '16dp'
-        spacing: '12dp'
-        canvas.before:
-            Color:
-                rgba: 0.07, 0.08, 0.10, 1
-            Rectangle:
-                pos: self.pos
-                size: self.size
+        padding: '18dp'
+        spacing: '14dp'
 
-        Label:
-            text: 'Pglu'
-            font_size: '28sp'
-            bold: True
+        BoxLayout:
             size_hint_y: None
-            height: '40dp'
-            color: 1, 1, 1, 1
+            height: '52dp'
+            spacing: '10dp'
+            BoxLayout:
+                orientation: 'vertical'
+                Label:
+                    text: 'Pglu'
+                    font_size: '30sp'
+                    bold: True
+                    color: 1, 1, 1, 1
+                    halign: 'left'
+                    valign: 'bottom'
+                    text_size: self.size
+                Label:
+                    text: 'Download & explain videos, audio & images'
+                    font_size: '12sp'
+                    color: 0.576, 0.631, 0.710, 1
+                    halign: 'left'
+                    valign: 'top'
+                    text_size: self.size
+            MutedButton:
+                text: 'Key'
+                font_size: '13sp'
+                size_hint: None, None
+                size: '70dp', '40dp'
+                pos_hint: {'center_y': 0.5}
+                on_release: app.open_settings()
 
-        Label:
-            text: 'YouTube . Instagram . videos . audio . images'
-            font_size: '13sp'
-            size_hint_y: None
-            height: '20dp'
-            color: 0.7, 0.7, 0.75, 1
+        AccentBar:
 
         Card:
             orientation: 'vertical'
             size_hint_y: None
-            height: '160dp'
-            spacing: '8dp'
+            height: '184dp'
+            spacing: '10dp'
 
             Label:
                 text: 'Paste a YouTube or Instagram URL'
                 size_hint_y: None
                 height: '24dp'
                 halign: 'left'
-                color: 0.85, 0.85, 0.9, 1
+                valign: 'middle'
+                text_size: self.size
+                color: 0.85, 0.87, 0.92, 1
 
             TextInput:
                 id: url_input
                 hint_text: 'https://...'
                 multiline: False
                 size_hint_y: None
-                height: '44dp'
+                height: '48dp'
                 font_size: '14sp'
-                background_color: 0.18, 0.20, 0.24, 1
+                padding: ['12dp', '14dp']
+                background_normal: ''
+                background_active: ''
+                background_color: 0.102, 0.133, 0.173, 1
                 foreground_color: 1, 1, 1, 1
-                cursor_color: 1, 1, 1, 1
-                padding: '10dp', '12dp'
+                hint_text_color: 0.45, 0.5, 0.58, 1
+                cursor_color: 0.231, 0.557, 1.0, 1
 
             BoxLayout:
                 size_hint_y: None
-                height: '44dp'
+                height: '46dp'
                 spacing: '8dp'
 
                 MutedButton:
@@ -105,21 +164,20 @@
             text: ''
             size_hint_y: None
             height: '24dp'
-            color: 0.95, 0.7, 0.5, 1
+            halign: 'left'
+            valign: 'middle'
+            text_size: self.size
+            color: 0.98, 0.72, 0.45, 1
 
         Widget:
-            # spacer
-            size_hint_y: 1
 
-        BoxLayout:
+        RoundedButton:
+            text: 'My downloads'
             size_hint_y: None
-            height: '44dp'
-            spacing: '8dp'
+            height: '48dp'
+            on_release: app.go_to('downloads')
 
-            MutedButton:
-                text: 'My downloads'
-                on_release: app.go_to('downloads')
-
+# ---------------- Info ----------------
 
 <InfoScreen>:
     thumb: thumb
@@ -137,43 +195,44 @@
 
     BoxLayout:
         orientation: 'vertical'
-        padding: '12dp'
-        spacing: '8dp'
-        canvas.before:
-            Color:
-                rgba: 0.07, 0.08, 0.10, 1
-            Rectangle:
-                pos: self.pos
-                size: self.size
+        padding: '14dp'
+        spacing: '10dp'
 
         BoxLayout:
             size_hint_y: None
-            height: '40dp'
+            height: '42dp'
             spacing: '8dp'
             MutedButton:
                 text: '< Back'
                 size_hint_x: None
-                width: '90dp'
+                width: '88dp'
                 on_release: app.go_to('home')
             Label:
                 text: 'Media info'
-                font_size: '18sp'
+                font_size: '19sp'
                 bold: True
                 color: 1, 1, 1, 1
-            RoundedButton:
+                halign: 'left'
+                valign: 'middle'
+                text_size: self.size
+            AccentButton:
                 id: explain_btn
                 text: 'Explain'
                 size_hint_x: None
-                width: '104dp'
+                width: '108dp'
                 on_release: root.explain()
+
+        AccentBar:
 
         ScrollView:
             do_scroll_x: False
+            bar_width: '3dp'
             BoxLayout:
                 orientation: 'vertical'
                 size_hint_y: None
                 height: self.minimum_height
-                spacing: '10dp'
+                spacing: '12dp'
+                padding: [0, '4dp']
 
                 AsyncImage:
                     id: thumb
@@ -185,7 +244,7 @@
                 Label:
                     id: title_lbl
                     text: ''
-                    font_size: '17sp'
+                    font_size: '18sp'
                     bold: True
                     color: 1, 1, 1, 1
                     size_hint_y: None
@@ -196,7 +255,7 @@
                 Label:
                     id: meta_lbl
                     text: ''
-                    color: 0.75, 0.78, 0.82, 1
+                    color: 0.62, 0.69, 0.78, 1
                     size_hint_y: None
                     text_size: self.width, None
                     height: self.texture_size[1]
@@ -205,7 +264,7 @@
                 Label:
                     id: tags_lbl
                     text: ''
-                    color: 0.55, 0.75, 0.95, 1
+                    color: 0.44, 0.69, 1.0, 1
                     size_hint_y: None
                     text_size: self.width, None
                     height: self.texture_size[1]
@@ -214,71 +273,97 @@
                 Label:
                     id: desc_lbl
                     text: ''
-                    color: 0.85, 0.85, 0.9, 1
+                    color: 0.82, 0.85, 0.90, 1
                     size_hint_y: None
                     text_size: self.width, None
                     height: self.texture_size[1]
                     halign: 'left'
 
-                Label:
-                    id: explain_lbl
-                    text: ''
-                    markup: True
-                    font_size: '14sp'
-                    color: 0.88, 0.94, 1, 1
+                # "Explain" result — sits in a tinted card.
+                BoxLayout:
+                    orientation: 'vertical'
                     size_hint_y: None
-                    text_size: self.width, None
-                    height: self.texture_size[1]
-                    halign: 'left'
+                    height: self.minimum_height if explain_lbl.text else 0
+                    opacity: 1 if explain_lbl.text else 0
+                    padding: ['12dp', '12dp'] if explain_lbl.text else [0, 0]
+                    canvas.before:
+                        Color:
+                            rgba: (0.486, 0.361, 1.0, 0.12) if explain_lbl.text else (0,0,0,0)
+                        RoundedRectangle:
+                            pos: self.pos
+                            size: self.size
+                            radius: [13,]
+                    canvas.after:
+                        Color:
+                            rgba: (0.486, 0.361, 1.0, 0.30) if explain_lbl.text else (0,0,0,0)
+                        Line:
+                            rounded_rectangle: (self.x, self.y, self.width, self.height, 13)
+                            width: 1.0
+                    Label:
+                        id: explain_lbl
+                        text: ''
+                        markup: True
+                        font_size: '14sp'
+                        color: 0.90, 0.94, 1.0, 1
+                        size_hint_y: None
+                        text_size: self.width, None
+                        height: self.texture_size[1]
+                        halign: 'left'
 
         Card:
             orientation: 'vertical'
             size_hint_y: None
-            height: '160dp'
-            spacing: '6dp'
+            height: '168dp'
+            spacing: '8dp'
 
             Label:
                 text: 'Pick quality'
                 size_hint_y: None
                 height: '20dp'
-                color: 0.85, 0.85, 0.9, 1
+                color: 0.85, 0.87, 0.92, 1
                 halign: 'left'
-                text_size: self.width, None
+                valign: 'middle'
+                text_size: self.size
 
             Spinner:
                 id: fmt_spinner
                 text: 'Best available'
                 values: []
                 size_hint_y: None
-                height: '40dp'
-                background_color: 0.18, 0.20, 0.24, 1
+                height: '42dp'
+                font_size: '14sp'
+                background_normal: ''
+                background_down: ''
+                background_color: 0.102, 0.133, 0.173, 1
                 color: 1, 1, 1, 1
 
             BoxLayout:
                 size_hint_y: None
                 height: '32dp'
+                spacing: '6dp'
                 CheckBox:
                     id: audio_chk
                     size_hint_x: None
                     width: '36dp'
-                    color: 1, 1, 1, 1
+                    color: 0.231, 0.557, 1.0, 1
                 Label:
                     text: 'Audio only (MP3)'
-                    color: 0.85, 0.85, 0.9, 1
+                    color: 0.85, 0.87, 0.92, 1
                     halign: 'left'
-                    text_size: self.width, None
+                    valign: 'middle'
+                    text_size: self.size
 
             RoundedButton:
                 id: download_btn
                 text: 'Download'
                 size_hint_y: None
-                height: '44dp'
+                height: '46dp'
                 on_release: root.start_download()
 
         BoxLayout:
             orientation: 'vertical'
             size_hint_y: None
-            height: '60dp'
+            height: '58dp'
             spacing: '4dp'
 
             ProgressBar:
@@ -286,57 +371,61 @@
                 max: 100
                 value: 0
                 size_hint_y: None
-                height: '20dp'
+                height: '18dp'
 
             Label:
                 id: progress_lbl
                 text: ''
-                color: 0.85, 0.85, 0.9, 1
+                color: 0.82, 0.85, 0.90, 1
                 size_hint_y: None
                 height: '24dp'
                 font_size: '12sp'
+                halign: 'left'
+                valign: 'middle'
+                text_size: self.size
 
+# ---------------- Downloads ----------------
 
 <DownloadsScreen>:
     files_box: files_box
 
     BoxLayout:
         orientation: 'vertical'
-        padding: '12dp'
-        spacing: '8dp'
-        canvas.before:
-            Color:
-                rgba: 0.07, 0.08, 0.10, 1
-            Rectangle:
-                pos: self.pos
-                size: self.size
+        padding: '14dp'
+        spacing: '10dp'
 
         BoxLayout:
             size_hint_y: None
-            height: '40dp'
+            height: '42dp'
             spacing: '8dp'
             MutedButton:
                 text: '< Back'
                 size_hint_x: None
-                width: '90dp'
+                width: '88dp'
                 on_release: app.go_to('home')
             Label:
                 text: 'My downloads'
-                font_size: '18sp'
+                font_size: '19sp'
                 bold: True
                 color: 1, 1, 1, 1
+                halign: 'left'
+                valign: 'middle'
+                text_size: self.size
             MutedButton:
                 text: 'Refresh'
                 size_hint_x: None
-                width: '100dp'
+                width: '96dp'
                 on_release: root.refresh()
+
+        AccentBar:
 
         ScrollView:
             do_scroll_x: False
+            bar_width: '3dp'
             BoxLayout:
                 id: files_box
                 orientation: 'vertical'
                 size_hint_y: None
                 height: self.minimum_height
-                spacing: '6dp'
-                padding: 0, '4dp'
+                spacing: '8dp'
+                padding: [0, '4dp']

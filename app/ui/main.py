@@ -242,41 +242,8 @@ class InfoScreen(Screen):
         self.explain_btn.text = "Explain"
 
     def _prompt_api_key(self) -> None:
-        """Popup to paste a free Gemini API key the first time Explain is used."""
-        from kivy.uix.popup import Popup
-        from kivy.uix.textinput import TextInput
-        from kivy.uix.button import Button
-        from app.ui.storage import get_gemini_api_key, set_gemini_api_key
-
-        box = BoxLayout(orientation="vertical", spacing=dp(8), padding=dp(10))
-        box.add_widget(Label(
-            text="Paste your free Google Gemini API key.\nGet one at aistudio.google.com/apikey",
-            size_hint_y=None, height=dp(56), halign="center", valign="middle",
-            color=(0.9, 0.9, 0.95, 1),
-        ))
-        ti = TextInput(
-            text=get_gemini_api_key(), multiline=False, password=True,
-            size_hint_y=None, height=dp(44), hint_text="AIza...",
-        )
-        box.add_widget(ti)
-
-        row = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(46), spacing=dp(8))
-        popup = Popup(title="Gemini API key", content=box, size_hint=(0.92, None), height=dp(230))
-
-        def _save(*_):
-            set_gemini_api_key(ti.text.strip())
-            popup.dismiss()
-            if ti.text.strip():
-                self.explain()
-
-        cancel_btn = Button(text="Cancel")
-        cancel_btn.bind(on_release=lambda *_: popup.dismiss())
-        save_btn = Button(text="Save & explain")
-        save_btn.bind(on_release=_save)
-        row.add_widget(cancel_btn)
-        row.add_widget(save_btn)
-        box.add_widget(row)
-        popup.open()
+        """First-run popup to paste a free Gemini key, then continue explaining."""
+        show_api_key_popup(on_saved=self.explain)
 
 
 # -----------------------------------------------------------------------------
@@ -289,10 +256,13 @@ class FileRow(BoxLayout):
                          spacing=dp(6),
                          padding=(dp(8), dp(4)),
                          **kw)
-        from kivy.graphics import Color, RoundedRectangle
+        from kivy.graphics import Color, RoundedRectangle, Line
         with self.canvas.before:
-            Color(0.13, 0.15, 0.18, 1)
-            self._bg = RoundedRectangle(pos=self.pos, size=self.size, radius=[10])
+            Color(0.102, 0.133, 0.173, 1)
+            self._bg = RoundedRectangle(pos=self.pos, size=self.size, radius=[11])
+        with self.canvas.after:
+            Color(1, 1, 1, 0.06)
+            self._border = Line(rounded_rectangle=(self.x, self.y, self.width, self.height, 11), width=1.0)
         self.bind(pos=self._sync_bg, size=self._sync_bg)
 
         self.file_path = file_path
@@ -318,13 +288,18 @@ class FileRow(BoxLayout):
         self.add_widget(info)
 
         from kivy.uix.button import Button
-        open_btn = Button(text="Open", size_hint_x=None, width=dp(70))
+        open_btn = Button(
+            text="Open", size_hint_x=None, width=dp(74),
+            background_normal="", background_down="",
+            background_color=(0.231, 0.557, 1.0, 1), bold=True,
+        )
         open_btn.bind(on_release=lambda *a: self._open())
         self.add_widget(open_btn)
 
     def _sync_bg(self, *_):
         self._bg.pos = self.pos
         self._bg.size = self.size
+        self._border.rounded_rectangle = (self.x, self.y, self.width, self.height, 11)
 
     def _open(self) -> None:
         path = str(self.file_path)
@@ -407,6 +382,59 @@ def _build_error_screen(message: str) -> BoxLayout:
     return root
 
 
+def show_api_key_popup(on_saved=None) -> None:
+    """Themed modal to paste / update the free Gemini API key. If a non-empty
+    key is saved, ``on_saved`` (if given) is called — used to auto-continue an
+    Explain action right after the user enters their key."""
+    from kivy.uix.popup import Popup
+    from kivy.uix.textinput import TextInput
+    from kivy.uix.button import Button
+    from app.ui.storage import get_gemini_api_key, set_gemini_api_key
+
+    box = BoxLayout(orientation="vertical", spacing=dp(10), padding=dp(12))
+    box.add_widget(Label(
+        text=("Paste your free Google Gemini API key.\n"
+              "Get one at aistudio.google.com/apikey\n"
+              "It's stored only on this device."),
+        size_hint_y=None, height=dp(74), halign="center", valign="middle",
+        color=(0.85, 0.87, 0.92, 1),
+    ))
+    ti = TextInput(
+        text=get_gemini_api_key(), multiline=False, password=True,
+        size_hint_y=None, height=dp(46), hint_text="AIza...",
+        background_normal="", background_active="",
+        background_color=(0.102, 0.133, 0.173, 1),
+        foreground_color=(1, 1, 1, 1), cursor_color=(0.231, 0.557, 1.0, 1),
+        padding=[dp(12), dp(13)],
+    )
+    box.add_widget(ti)
+
+    row = BoxLayout(orientation="horizontal", size_hint_y=None, height=dp(48), spacing=dp(8))
+    popup = Popup(
+        title="Gemini API key", content=box, size_hint=(0.92, None), height=dp(264),
+        title_color=(1, 1, 1, 1), separator_color=(0.231, 0.557, 1.0, 1),
+        background_color=(0.039, 0.055, 0.078, 1),
+    )
+
+    def _save(*_):
+        val = ti.text.strip()
+        set_gemini_api_key(val)
+        popup.dismiss()
+        if val and on_saved:
+            on_saved()
+
+    cancel_btn = Button(text="Cancel", background_normal="", background_down="",
+                        background_color=(0.16, 0.19, 0.25, 1))
+    cancel_btn.bind(on_release=lambda *_: popup.dismiss())
+    save_btn = Button(text="Save key", background_normal="", background_down="",
+                      background_color=(0.231, 0.557, 1.0, 1), bold=True)
+    save_btn.bind(on_release=_save)
+    row.add_widget(cancel_btn)
+    row.add_widget(save_btn)
+    box.add_widget(row)
+    popup.open()
+
+
 class PgluApp(App):
     title = "Pglu"
     icon = str(_ICON_PATH) if _ICON_PATH.exists() else ""
@@ -443,6 +471,10 @@ class PgluApp(App):
 
     def go_to(self, name: str) -> None:
         self.sm.current = name
+
+    def open_settings(self) -> None:
+        """Open the Gemini API-key modal from anywhere (e.g. the home 'Key' button)."""
+        show_api_key_popup()
 
 
 def _install_excepthook() -> None:
