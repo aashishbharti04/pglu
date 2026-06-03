@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import os
+import shutil
 import sys
 from pathlib import Path
 from typing import Optional
@@ -39,6 +40,16 @@ def _find_bundled_ffmpeg() -> Optional[str]:
         if ff.exists():
             return str(ff)
     return None
+
+
+def _ffmpeg_path() -> Optional[str]:
+    """Locate ffmpeg: bundled next to the exe, or anywhere on PATH. Returns
+    None when no ffmpeg exists (e.g. the Android APK), which tells the
+    downloader it must avoid any step that needs muxing/transcoding."""
+    bundled = _find_bundled_ffmpeg()
+    if bundled:
+        return bundled
+    return shutil.which("ffmpeg")
 
 
 def _classify_format(f: dict) -> Optional[MediaFormat]:
@@ -200,36 +211,56 @@ class YouTubeEngine:
             "progress_hooks": [_hook],
             "writethumbnail": job.write_thumbnail,
             "postprocessors": [],
-            "merge_output_format": "mp4",
         }
-        bundled_ffmpeg = _find_bundled_ffmpeg()
-        if bundled_ffmpeg:
-            opts["ffmpeg_location"] = bundled_ffmpeg
+        ffmpeg = _ffmpeg_path()
+        if ffmpeg:
+            opts["ffmpeg_location"] = ffmpeg
         if self.cookies_file and self.cookies_file.exists():
             opts["cookiefile"] = str(self.cookies_file)
 
+        note = ""
         if job.audio_only:
-            opts["format"] = job.format_id or "bestaudio/best"
-            opts["postprocessors"].append({
-                "key": "FFmpegExtractAudio",
-                "preferredcodec": "mp3",
-                "preferredquality": "192",
-            })
-        else:
-            if job.format_id:
-                # If user picked a video-only format, ensure audio gets merged in.
-                opts["format"] = f"{job.format_id}+bestaudio/best"
+            if ffmpeg:
+                # Convert to a clean MP3.
+                opts["format"] = job.format_id or "bestaudio/best"
+                opts["postprocessors"].append({
+                    "key": "FFmpegExtractAudio",
+                    "preferredcodec": "mp3",
+                    "preferredquality": "192",
+                })
             else:
-                opts["format"] = "bestvideo+bestaudio/best"
+                # No ffmpeg (e.g. Android): grab a ready-to-play audio file
+                # rather than attempting an MP3 transcode that would fail.
+                opts["format"] = "bestaudio[ext=m4a]/bestaudio/best"
+        else:
+            if ffmpeg:
+                # Full quality: download best video + best audio and merge them.
+                if job.format_id:
+                    opts["format"] = f"{job.format_id}+bestaudio/best"
+                else:
+                    opts["format"] = "bestvideo+bestaudio/best"
+                opts["merge_output_format"] = "mp4"
+            else:
+                # No ffmpeg → we CANNOT merge separate video+audio streams, so a
+                # high-res video-only stream would come out silent. Force a
+                # single progressive stream that already contains audio. This
+                # caps quality (~720p on YouTube) but guarantees sound.
+                opts["format"] = (
+                    "best[vcodec!=none][acodec!=none][ext=mp4]/"
+                    "best[vcodec!=none][acodec!=none]/best"
+                )
+                note = " (best stream with audio; HD merge needs ffmpeg)"
 
-        if job.write_thumbnail:
+        # Converting the thumbnail to jpg also needs ffmpeg; skip it otherwise
+        # (the thumbnail is still saved in its native format).
+        if job.write_thumbnail and ffmpeg:
             opts["postprocessors"].append({
                 "key": "FFmpegThumbnailsConvertor",
                 "format": "jpg",
             })
 
         if on_progress:
-            on_progress(ProgressEvent(kind="start", message=f"Downloading: {info.title}"))
+            on_progress(ProgressEvent(kind="start", message=f"Downloading: {info.title}{note}"))
 
         try:
             with yt_dlp.YoutubeDL(opts) as ydl:
@@ -254,8 +285,9 @@ class YouTubeEngine:
 
     @staticmethod
     def _guess_final_path(out_dir: Path, stem: str, audio_only: bool) -> Optional[Path]:
-        # Prefer mp3 for audio, then mp4 for video, otherwise any matching stem.
-        prefs = [".mp3"] if audio_only else [".mp4", ".mkv", ".webm"]
+        # Prefer mp3 for audio (with ffmpeg), else the raw audio container;
+        # mp4/mkv/webm for video. Otherwise any matching stem.
+        prefs = [".mp3", ".m4a", ".opus", ".webm"] if audio_only else [".mp4", ".mkv", ".webm"]
         for ext in prefs:
             p = out_dir / f"{stem}{ext}"
             if p.exists():
